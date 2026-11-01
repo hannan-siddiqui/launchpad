@@ -10,9 +10,10 @@ contextBridge.exposeInMainWorld('api', {
   inspectPath: (filePath) => ipcRenderer.invoke('inspect-path', filePath),
   scanInstalledApps: () => ipcRenderer.invoke('scan-installed-apps'),
 
-  // Launching
+  // Launching & External
   launchApp: (targetPath, runAsAdmin = false) => ipcRenderer.invoke('launch-app', { target: targetPath, runAsAdmin }),
   showInFolder: (filePath) => ipcRenderer.invoke('show-in-folder', filePath),
+  openExternal: (url) => ipcRenderer.invoke('open-external', url),
 
   // Global Hotkey
   getGlobalHotkey: () => ipcRenderer.invoke('get-global-hotkey'),

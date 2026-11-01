@@ -1423,6 +1423,20 @@ function setupEventListeners() {
       renderTabsManagerList();
     }
   });
+
+  // Handle all external link clicks to open in user's default browser (LinkedIn, GitHub, Insta, etc.)
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('.external-link, [data-external-url], a[target="_blank"]');
+    if (link) {
+      const url = link.dataset.externalUrl || link.getAttribute('href');
+      if (url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('mailto:') || url.startsWith('tel:'))) {
+        e.preventDefault();
+        if (window.api && window.api.openExternal) {
+          window.api.openExternal(url);
+        }
+      }
+    }
+  });
 }
 
 // Start Launchpad

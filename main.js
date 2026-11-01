@@ -854,6 +854,18 @@ ipcMain.handle('save-settings', (event, settings) => {
   return saveSettings(settings);
 });
 
+ipcMain.handle('open-external', async (event, targetUrl) => {
+  if (targetUrl) {
+    try {
+      await shell.openExternal(targetUrl);
+      return true;
+    } catch (e) {
+      console.error('Error opening external URL:', e);
+    }
+  }
+  return false;
+});
+
 let hookProcess = null;
 
 function startWinSpaceHook() {
