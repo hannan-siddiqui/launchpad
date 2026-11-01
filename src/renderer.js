@@ -1431,6 +1431,13 @@ function setupEventListeners() {
       const url = link.dataset.externalUrl || link.getAttribute('href');
       if (url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('mailto:') || url.startsWith('tel:'))) {
         e.preventDefault();
+
+        // Close Settings and immediately hide Launchpad (just like launching an app)
+        closeSettingsModal();
+        if (window.api && window.api.hideWindow) {
+          window.api.hideWindow();
+        }
+
         if (window.api && window.api.openExternal) {
           window.api.openExternal(url);
         }
