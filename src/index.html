@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>macOS Launchpad</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="fullscreen-mode">
+  <!-- Fullscreen Frosted Apple Canvas -->
+  <div class="launchpad-fullscreen-canvas" id="fullscreenCanvas">
+    <!-- Dynamic Wallpaper / Color Background Layer -->
+    <div class="canvas-bg-layer" id="canvasBgLayer"></div>
+    <div class="canvas-glow glow-top" id="glowTop"></div>
+    <div class="canvas-glow glow-center" id="glowCenter"></div>
+
+    <!-- Apple Top Corner Controls (Settings Gear) -->
+    <div class="apple-top-controls">
+      <button id="settingsBtn" class="apple-glass-circle-btn" title="Settings (Add Apps/Folders, Background, Tabs)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+      <button id="closeBtn" class="apple-glass-circle-btn close-btn" title="Exit Launchpad (Esc)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Apple Top Center Zone: Minimal Search Pill & Segmented Tabs -->
+    <div class="apple-top-center-zone">
+      <!-- Centered Sleek Apple Search Pill -->
+      <div class="apple-search-box">
+        <svg class="apple-search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Search" autocomplete="off" spellcheck="false">
+        <button id="clearSearchBtn" class="clear-search-btn hidden">&times;</button>
+      </div>
+
+      <!-- Apple Segmented Tabs Bar -->
+      <div class="apple-tabs-bar" id="categoryFilters">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- Main Fullscreen Apps Grid Viewport -->
+    <main class="launchpad-grid-wrapper" id="gridWrapper">
+      <div class="launchpad-grid apple-grid" id="appsGrid">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Empty Search State -->
+      <div class="empty-state hidden" id="emptyState">
+        <div class="empty-icon">🔍</div>
+        <h3>No matching apps on Launchpad</h3>
+        <p>Looking for an app installed on your PC?</p>
+        <button type="button" id="emptyStateSearchInstalledBtn" class="primary-btn" style="margin-top: 14px; font-size: 13px; padding: 10px 20px;">
+          🔍 Search & Add from Installed PC Apps
+        </button>
+      </div>
+    </main>
+
+    <!-- Drag & Drop Fullscreen Overlay -->
+    <div class="drop-overlay hidden" id="dropOverlay">
+      <div class="drop-target-box">
+        <div class="drop-pulse-icon">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+        </div>
+        <h2>Drop App or Folder Here</h2>
+        <p>Release to add to current tab</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Unified Apple-Style Settings Sheet Modal -->
+  <div class="modal-backdrop hidden" id="settingsModal">
+    <div class="modal-card apple-modal">
+      <div class="modal-header">
+        <div class="apple-modal-title">
+          <h2>Launchpad Settings</h2>
+        </div>
+        <button class="modal-close-btn" id="closeSettingsModalBtn">&times;</button>
+      </div>
+
+      <!-- Navigation tabs inside settings modal -->
+      <div class="modal-tabs apple-modal-tabs">
+        <button class="tab-btn active" data-tab="tabAdd">➕ Add App / Folder</button>
+        <button class="tab-btn" data-tab="tabBackground">🎨 Color & Background</button>
+        <button class="tab-btn" data-tab="tabTabs">📑 Manage Tabs</button>
+        <button class="tab-btn" data-tab="tabGeneral">⚙️ Preferences</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Tab 1: Add App / Folder -->
+        <div class="tab-content active" id="tabAdd">
+          <!-- Segmented Sub-view Switcher -->
+          <div class="add-subtabs-switcher">
+            <button type="button" class="subtab-pill active" id="subtabSearchBtn">🔍 Search Installed PC Apps</button>
+            <button type="button" class="subtab-pill" id="subtabCustomBtn">📁 Custom Folder, App, or URL</button>
+          </div>
+
+          <!-- Sub-View 1: Search Installed PC Apps -->
+          <div class="add-subview" id="subviewSearch">
+            <div class="installed-search-container">
+              <div class="installed-search-topbar">
+                <div class="installed-search-heading">
+                  <h4>All Applications Found on Your PC</h4>
+                  <p>1-click add any software without browsing file paths</p>
+                </div>
+                <div class="installed-target-tab-wrap">
+                  <label for="installedAppTabSelect">Add to Tab:</label>
+                  <select id="installedAppTabSelect" class="styled-select-sm"></select>
+                </div>
+              </div>
+
+              <div class="installed-search-input-wrap">
+                <svg class="search-field-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="installedSearchInput" placeholder="Search installed apps (e.g. Chrome, Steam, Discord, Spotify, VS Code)..." autocomplete="off">
+                <button type="button" id="clearInstalledSearchBtn" class="clear-search-btn hidden">&times;</button>
+              </div>
+
+              <div class="installed-apps-scrollbox" id="installedAppsList">
+                <div class="installed-empty-hint">Scanning installed apps...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub-View 2: Custom Folder / App / URL -->
+          <div class="add-subview hidden" id="subviewCustom">
+            <div class="add-choice-row">
+              <button type="button" class="choice-card-btn" id="browseAppBtn">
+                <span class="choice-icon">🚀</span>
+                <div class="choice-text">
+                  <strong>Browse App (.exe, .lnk)</strong>
+                  <span>Select file manually</span>
+                </div>
+              </button>
+              <button type="button" class="choice-card-btn" id="browseFolderBtn">
+                <span class="choice-icon">📂</span>
+                <div class="choice-text">
+                  <strong>Browse Folder</strong>
+                  <span>Preserves custom folder icons</span>
+                </div>
+              </button>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group flex-2">
+                <label>Name</label>
+                <input type="text" id="addNameInput" placeholder="e.g. My App, Projects, YouTube">
+              </div>
+              <div class="form-group flex-1">
+                <label>Assign to Tab</label>
+                <select id="addTabSelect">
+                  <!-- Dynamically filled with user tabs -->
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Executable, Folder, or Web URL Path</label>
+              <input type="text" id="addPathInput" placeholder="C:\path\to\folder or app.exe or https://...">
+            </div>
+
+            <!-- Expanded Icon / Emoji Selector -->
+            <div class="form-group">
+              <div class="emoji-header-row">
+                <label>Icon / Emoji Customization</label>
+                <span class="emoji-count-hint">110+ icons to choose from</span>
+              </div>
+              <div class="emoji-picker-container">
+                <div class="emoji-picker-row" id="emojiPickerRow">
+                  <button type="button" class="emoji-btn active" data-emoji="" title="Auto-detect icon">Auto</button>
+                  <!-- Folders & Organizers -->
+                  <button type="button" class="emoji-btn" data-emoji="📁">📁</button>
+                  <button type="button" class="emoji-btn" data-emoji="📂">📂</button>
+                  <button type="button" class="emoji-btn" data-emoji="🗂️">🗂️</button>
+                  <button type="button" class="emoji-btn" data-emoji="🗃️">🗃️</button>
+                  <button type="button" class="emoji-btn" data-emoji="🗄️">🗄️</button>
+                  <button type="button" class="emoji-btn" data-emoji="📦">📦</button>
+                  <button type="button" class="emoji-btn" data-emoji="🗳️">🗳️</button>
+                  <button type="button" class="emoji-btn" data-emoji="🧰">🧰</button>
+                  <button type="button" class="emoji-btn" data-emoji="🧳">🧳</button>
+                  <!-- Coding & Tech -->
+                  <button type="button" class="emoji-btn" data-emoji="💻">💻</button>
+                  <button type="button" class="emoji-btn" data-emoji="🖥️">🖥️</button>
+                  <button type="button" class="emoji-btn" data-emoji="⌨️">⌨️</button>
+                  <button type="button" class="emoji-btn" data-emoji="🖱️">🖱️</button>
+                  <button type="button" class="emoji-btn" data-emoji="📱">📱</button>
+                  <button type="button" class="emoji-btn" data-emoji="📟">📟</button>
+                  <button type="button" class="emoji-btn" data-emoji="🖨️">🖨️</button>
+                  <button type="button" class="emoji-btn" data-emoji="💾">💾</button>
+                  <button type="button" class="emoji-btn" data-emoji="💿">💿</button>
+                  <button type="button" class="emoji-btn" data-emoji="📀">📀</button>
+                  <button type="button" class="emoji-btn" data-emoji="🔌">🔌</button>
+                  <button type="button" class="emoji-btn" data-emoji="🔋">🔋</button>
+                  <button type="button" class="emoji-btn" data-emoji="⚡">⚡</button>
+                  <button type="button" class="emoji-btn" data-emoji="🤖">🤖</button>
+                  <button type="button" class="emoji-btn" data-emoji="🧠">🧠</button>
+                  <button type="button" class="emoji-btn" data-emoji="👨‍💻">👨‍💻</button>
+                  <button type="button" class="emoji-btn" data-emoji="👩‍💻">👩‍💻</button>
+                  <button type="button" class="emoji-btn" data-emoji="⚙️">⚙️</button>
+                  <button type="button" class="emoji-btn" data-emoji="🛠️">🛠️</button>
+                  <button type="button" class="emoji-btn" data-emoji="🔧">🔧</button>
+                  <button type="button" class="emoji-btn" data-emoji="🔨">🔨</button>
+                  <button type="button" class="emoji-btn" data-emoji="⛏️">⛏️</button>
+                  <button type="button" class="emoji-btn" data-emoji="🔩">🔩</button>
+                  <button type="button" class="emoji-btn" data-emoji="🪛">🪛</button>
+                  <button type="button" class="emoji-btn" data-emoji="🔬">🔬</button>
+                  <button type="button" class="emoji-btn" data-emoji="🧬">🧬</button>
+                  <button type="button" class="emoji-btn" data-emoji="🧪">🧪</button>
+                  <!-- Web, Cloud & Network -->
+                  <button type="button" class="emoji-btn" data-emoji="🌐">🌐</button>
+                  <button type="button" class="emoji-btn" data-emoji="🌍">🌍</button>
+                  <button type="button" class="emoji-btn" data-emoji="☁️">☁️</button>
+                  <button type="button" class="emoji-btn" data-emoji="⛅">⛅</button>
+                  <button type="button" class="emoji-btn" data-emoji="🚀">🚀</button>
+                  <button type="button" class="emoji-btn" data-emoji="🛸">🛸</button>
+                  <button type="button" class="emoji-btn" data-emoji="📡">📡</button>
+                  <button type="button" class="emoji-btn" data-emoji="🛰️">🛰️</button>
+                  <button type="button" class="emoji-btn" data-emoji="🔗">🔗</button>
+                  <button type="button" class="emoji-btn" data-emoji="📶">📶</button>
+                  <!-- Documents, Notes & Office -->
+                  <button type="button" class="emoji-btn" data-emoji="📋">📋</button>
+                  <button type="button" class="emoji-btn" data-emoji="📝">📝</button>
+                  <button type="button" class="emoji-btn" data-emoji="📄">📄</button>
+                  <button type="button" class="emoji-btn" data-emoji="📑">📑</button>
+                  <button type="button" class="emoji-btn" data-emoji="📜">📜</button>
+                  <button type="button" class="emoji-btn" data-emoji="📊">📊</button>
+                  <button type="button" class="emoji-btn" data-emoji="📈">📈</button>
+                  <button type="button" class="emoji-btn" data-emoji="📉">📉</button>
+                  <button type="button" class="emoji-btn" data-emoji="📚">📚</button>
+                  <button type="button" class="emoji-btn" data-emoji="📖">📖</button>
+                  <button type="button" class="emoji-btn" data-emoji="🔖">🔖</button>
+                  <button type="button" class="emoji-btn" data-emoji="🏷️">🏷️</button>
+                  <button type="button" class="emoji-btn" data-emoji="📌">📌</button>
+                  <button type="button" class="emoji-btn" data-emoji="📍">📍</button>
+                  <button type="button" class="emoji-btn" data-emoji="📎">📎</button>
+                  <button type="button" class="emoji-btn" data-emoji="📐">📐</button>
+                  <button type="button" class="emoji-btn" data-emoji="📏">📏</button>
+                  <button type="button" class="emoji-btn" data-emoji="✂️">✂️</button>
+                  <button type="button" class="emoji-btn" data-emoji="📅">📅</button>
+                  <button type="button" class="emoji-btn" data-emoji="⏰">⏰</button>
+                  <button type="button" class="emoji-btn" data-emoji="⏱️">⏱️</button>
+                  <button type="button" class="emoji-btn" data-emoji="💼">💼</button>
+                  <button type="button" class="emoji-btn" data-emoji="🏢">🏢</button>
+                  <button type="button" class="emoji-btn" data-emoji="🏦">🏦</button>
+                  <button type="button" class="emoji-btn" data-emoji="🏠">🏠</button>
+                  <button type="button" class="emoji-btn" data-emoji="✉️">✉️</button>
+                  <button type="button" class="emoji-btn" data-emoji="📧">📧</button>
+                  <button type="button" class="emoji-btn" data-emoji="📬">📬</button>
+                  <!-- Creative, Design & Media -->
+                  <button type="button" class="emoji-btn" data-emoji="🎨">🎨</button>
+                  <button type="button" class="emoji-btn" data-emoji="🖌️">🖌️</button>
+                  <button type="button" class="emoji-btn" data-emoji="🖍️">🖍️</button>
+                  <button type="button" class="emoji-btn" data-emoji="🎬">🎬</button>
+                  <button type="button" class="emoji-btn" data-emoji="🎥">🎥</button>
+                  <button type="button" class="emoji-btn" data-emoji="📸">📸</button>
+                  <button type="button" class="emoji-btn" data-emoji="📹">📹</button>
+                  <button type="button" class="emoji-btn" data-emoji="🖼️">🖼️</button>
+                  <button type="button" class="emoji-btn" data-emoji="🎵">🎵</button>
+                  <button type="button" class="emoji-btn" data-emoji="🎶">🎶</button>
+                  <button type="button" class="emoji-btn" data-emoji="🎧">🎧</button>
+                  <button type="button" class="emoji-btn" data-emoji="🎙️">🎙️</button>
+                  <button type="button" class="emoji-btn" data-emoji="📻">📻</button>
+                  <button type="button" class="emoji-btn" data-emoji="📺">📺</button>
+                  <button type="button" class="emoji-btn" data-emoji="🔊">🔊</button>
+                  <button type="button" class="emoji-btn" data-emoji="🔔">🔔</button>
+                  <!-- Gaming & Entertainment -->
+                  <button type="button" class="emoji-btn" data-emoji="🎮">🎮</button>
+                  <button type="button" class="emoji-btn" data-emoji="🕹️">🕹️</button>
+                  <button type="button" class="emoji-btn" data-emoji="👾">👾</button>
+                  <button type="button" class="emoji-btn" data-emoji="🎯">🎯</button>
+                  <button type="button" class="emoji-btn" data-emoji="🎲">🎲</button>
+                  <button type="button" class="emoji-btn" data-emoji="🧩">🧩</button>
+                  <!-- Security & Privacy -->
+                  <button type="button" class="emoji-btn" data-emoji="🔒">🔒</button>
+                  <button type="button" class="emoji-btn" data-emoji="🔓">🔓</button>
+                  <button type="button" class="emoji-btn" data-emoji="🔑">🔑</button>
+                  <button type="button" class="emoji-btn" data-emoji="🗝️">🗝️</button>
+                  <button type="button" class="emoji-btn" data-emoji="🛡️">🛡️</button>
+                  <button type="button" class="emoji-btn" data-emoji="🚨">🚨</button>
+                  <button type="button" class="emoji-btn" data-emoji="👁️">👁️</button>
+                  <!-- Lifestyle, Badges & Rewards -->
+                  <button type="button" class="emoji-btn" data-emoji="⭐">⭐</button>
+                  <button type="button" class="emoji-btn" data-emoji="🌟">🌟</button>
+                  <button type="button" class="emoji-btn" data-emoji="✨">✨</button>
+                  <button type="button" class="emoji-btn" data-emoji="🔥">🔥</button>
+                  <button type="button" class="emoji-btn" data-emoji="💎">💎</button>
+                  <button type="button" class="emoji-btn" data-emoji="🏆">🏆</button>
+                  <button type="button" class="emoji-btn" data-emoji="🥇">🥇</button>
+                  <button type="button" class="emoji-btn" data-emoji="🥈">🥈</button>
+                  <button type="button" class="emoji-btn" data-emoji="🥉">🥉</button>
+                  <button type="button" class="emoji-btn" data-emoji="💡">💡</button>
+                  <button type="button" class="emoji-btn" data-emoji="☕">☕</button>
+                  <button type="button" class="emoji-btn" data-emoji="🍕">🍕</button>
+                  <button type="button" class="emoji-btn" data-emoji="🛒">🛒</button>
+                  <button type="button" class="emoji-btn" data-emoji="🚗">🚗</button>
+                  <button type="button" class="emoji-btn" data-emoji="❤️">❤️</button>
+                  <button type="button" class="emoji-btn" data-emoji="💯">💯</button>
+                  <button type="button" class="emoji-btn" data-emoji="🪄">🪄</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 14px;">
+              <button class="secondary-btn" id="cancelAddBtn">Cancel</button>
+              <button class="primary-btn" id="confirmAddBtn">Add to Launchpad</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Color Background & Themes -->
+        <div class="tab-content" id="tabBackground">
+          <div class="setting-item-block">
+            <h4>Apple Wallpaper Themes</h4>
+            <p>Choose an Apple-inspired vibrant gradient background</p>
+            <div class="wallpaper-presets-grid" id="wallpaperPresetsGrid">
+              <button class="theme-preset-card active" data-theme="apple-vibrant">
+                <div class="preset-preview theme-vibrant"></div>
+                <span>Apple Vibrant</span>
+              </button>
+              <button class="theme-preset-card" data-theme="apple-monterey">
+                <div class="preset-preview theme-monterey"></div>
+                <span>Monterey</span>
+              </button>
+              <button class="theme-preset-card" data-theme="apple-ventura">
+                <div class="preset-preview theme-ventura"></div>
+                <span>Ventura Sunset</span>
+              </button>
+              <button class="theme-preset-card" data-theme="apple-bigsur">
+                <div class="preset-preview theme-bigsur"></div>
+                <span>Big Sur Cyan</span>
+              </button>
+              <button class="theme-preset-card" data-theme="apple-dark">
+                <div class="preset-preview theme-dark"></div>
+                <span>Space Gray</span>
+              </button>
+              <button class="theme-preset-card" data-theme="apple-aurora">
+                <div class="preset-preview theme-aurora"></div>
+                <span>Midnight Aurora</span>
+              </button>
+              <button class="theme-preset-card" data-theme="pure-black">
+                <div class="preset-preview theme-black"></div>
+                <span>Pure Black</span>
+              </button>
+              <button class="theme-preset-card" data-theme="custom-solid">
+                <div class="preset-preview theme-custom-solid" id="customSolidPreview"></div>
+                <span>Custom Color</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-divider"><span>CUSTOM SOLID COLOR OR GRADIENT</span></div>
+
+          <div class="custom-color-controls">
+            <div class="color-picker-item">
+              <label>Custom Solid Color</label>
+              <div class="color-picker-row">
+                <input type="color" id="customSolidColorInput" value="#1e1b4b">
+                <input type="text" id="customSolidColorText" value="#1e1b4b" class="color-hex-text">
+                <button type="button" class="apply-color-btn" id="applySolidColorBtn">Apply Color</button>
+              </div>
+            </div>
+
+            <div class="color-picker-item">
+              <label>Custom 2-Color Gradient</label>
+              <div class="color-picker-row">
+                <input type="color" id="gradStartColorInput" value="#c026d3">
+                <span class="to-arrow">➔</span>
+                <input type="color" id="gradEndColorInput" value="#1e1b4b">
+                <button type="button" class="apply-color-btn" id="applyGradColorBtn">Apply Gradient</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Opacity / Dimming Slider -->
+          <div class="setting-item-block" style="margin-top: 18px;">
+            <div class="setting-row">
+              <div class="setting-text">
+                <h4>Background Blur & Solidness</h4>
+                <p>Adjust frosted backdrop density</p>
+              </div>
+              <span class="range-val" id="opacityVal">95%</span>
+            </div>
+            <input type="range" id="opacitySlider" min="60" max="100" value="95" class="styled-range">
+          </div>
+        </div>
+
+        <!-- Tab 3: Manage Tabs -->
+        <div class="tab-content" id="tabTabs">
+          <div class="setting-item-block">
+            <h4>Your Launchpad Tabs</h4>
+            <p>Create tabs like Home, Dev, Work, Tools, and organize your apps</p>
+
+            <div class="tabs-manager-list" id="tabsManagerList">
+              <!-- Dynamically populated tab items with delete/rename -->
+            </div>
+
+            <div class="create-tab-row">
+              <input type="text" id="newTabInput" placeholder="New Tab Name (e.g. Dev, Games, Work)...">
+              <button class="primary-btn" id="createNewTabBtn">+ Create Tab</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: General Preferences & Global Hotkey -->
+        <div class="tab-content" id="tabGeneral">
+          <!-- Hotkey Configuration -->
+          <div class="setting-item-block">
+            <h4>Global Shortcut to Open Launchpad</h4>
+            <p>Press this key anywhere on Windows to reveal Launchpad</p>
+            <div class="hotkey-presets-grid">
+              <button class="hotkey-preset-btn active" data-key="Win+Space">Win + Space</button>
+              <button class="hotkey-preset-btn" data-key="Ctrl+Space">Ctrl + Space</button>
+              <button class="hotkey-preset-btn" data-key="Alt+Space">Alt + Space</button>
+              <button class="hotkey-preset-btn" data-key="Ctrl+Shift+Space">Ctrl + Shift + Space</button>
+              <button class="hotkey-preset-btn" data-key="F4">F4</button>
+              <button class="hotkey-preset-btn" data-key="Alt+Z">Alt + Z</button>
+            </div>
+
+            <div class="form-group" style="margin-top: 14px;">
+              <label>Custom Shortcut</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="customHotkeyInput" placeholder="Click and press keys (e.g. Ctrl+Shift+K)" readonly style="flex: 1;">
+                <button class="primary-btn" id="saveCustomHotkeyBtn">Apply</button>
+              </div>
+            </div>
+            <div id="hotkeyFeedback" class="feedback-msg hidden"></div>
+          </div>
+
+          <!-- Auto Hide Setting -->
+          <div class="setting-item">
+            <div class="setting-text">
+              <h4>Auto-Close on Launch</h4>
+              <p>Automatically close Launchpad when opening an app</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="autoHideCheckbox" checked>
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick New Tab Inline Modal Prompt -->
+  <div class="modal-backdrop hidden" id="quickTabModal">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h2>Create New Tab</h2>
+        <button class="modal-close-btn" id="closeQuickTabBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Tab Name</label>
+          <input type="text" id="quickTabInput" placeholder="e.g. Dev, Home, Work, Games">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="secondary-btn" id="cancelQuickTabBtn">Cancel</button>
+        <button class="primary-btn" id="confirmQuickTabBtn">Create Tab</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Right-Click Context Menu -->
+  <div class="context-menu hidden" id="contextMenu">
+    <div class="context-item" id="ctxLaunch">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+      <span>Open</span>
+    </div>
+    <div class="context-item" id="ctxRunAdmin">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+      <span>Run as Administrator</span>
+    </div>
+    <div class="context-item" id="ctxOpenFolder">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+      <span>Open in Explorer / File Location</span>
+    </div>
+
+    <!-- Move to Tab Submenu -->
+    <div class="context-item has-submenu" id="ctxMoveToTab">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+      <span>Move to Tab ▸</span>
+      <div class="context-submenu" id="ctxTabsSubmenu">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- Move Position Left / Right -->
+    <div class="context-item" id="ctxMoveLeft">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      <span>Move Left</span>
+    </div>
+    <div class="context-item" id="ctxMoveRight">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      <span>Move Right</span>
+    </div>
+
+    <div class="context-divider"></div>
+    <div class="context-item danger" id="ctxRemove">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+      <span>Remove from Launchpad</span>
+    </div>
+  </div>
+
+  <!-- Desktop / Wallpaper Right-Click Context Menu -->
+  <div class="context-menu hidden" id="desktopContextMenu">
+    <div class="context-item" id="ctxDeskSettings">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      <span>Settings & Appearance</span>
+    </div>
+    <div class="context-item" id="ctxDeskAdd">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      <span>Add App or Folder...</span>
+    </div>
+    <div class="context-item" id="ctxDeskNewTab">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+      <span>Create New Tab...</span>
+    </div>
+    <div class="context-divider"></div>
+    <div class="context-item" id="ctxDeskExit">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      <span>Exit Launchpad (Esc)</span>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

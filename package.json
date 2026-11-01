@@ -1,0 +1,58 @@
+{
+  "name": "macos-launchpad-winui",
+  "version": "1.0.0",
+  "description": "A sleek macOS-style Fullscreen Launchpad for Windows with acrylic glassmorphism, system tray integration, and instant app launching.",
+  "main": "main.js",
+  "scripts": {
+    "start": "cmd /c \"set ELECTRON_RUN_AS_NODE=&& electron .\"",
+    "dev": "cmd /c \"set ELECTRON_RUN_AS_NODE=&& electron .\"",
+    "dist": "cmd /c \"set ELECTRON_RUN_AS_NODE=&& electron-builder --win nsis\"",
+    "dist:portable": "cmd /c \"set ELECTRON_RUN_AS_NODE=&& electron-builder --win portable\"",
+    "pack": "cmd /c \"set ELECTRON_RUN_AS_NODE=&& electron-builder --dir\""
+  },
+  "build": {
+    "appId": "com.hannan.launchpad",
+    "productName": "Launchpad",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "win-space-hook.ps1",
+      "extract-icon-helper.ps1",
+      "src/**/*",
+      "assets/**/*"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Launchpad",
+      "runAfterFinish": true
+    }
+  },
+  "keywords": [
+    "launchpad",
+    "winui",
+    "macos",
+    "dock",
+    "launcher",
+    "electron"
+  ],
+  "author": "Hannan Siddiqui",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^40.8.0",
+    "electron-builder": "^26.7.0"
+  }
+}
