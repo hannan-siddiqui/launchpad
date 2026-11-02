@@ -906,6 +906,79 @@ html, body {
   color: var(--text-dim);
 }
 
+/* Apple Animated Loader for Installed PC Apps */
+.installed-apps-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 50px 20px;
+  gap: 16px;
+  min-height: 280px;
+  animation: fadeInLoader 0.25s ease-out;
+}
+
+@keyframes fadeInLoader {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.apple-spinner {
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+
+.apple-spinner .spinner-blade {
+  position: absolute;
+  left: 46%;
+  top: 0;
+  width: 9%;
+  height: 28%;
+  background-color: #c026d3;
+  border-radius: 999px;
+  transform-origin: center 175%;
+  animation: appleSpinnerFade 1s linear infinite;
+  box-shadow: 0 0 10px rgba(192, 38, 211, 0.5);
+}
+
+.apple-spinner .spinner-blade:nth-child(1)  { transform: rotate(0deg);   animation-delay: -1s; }
+.apple-spinner .spinner-blade:nth-child(2)  { transform: rotate(30deg);  animation-delay: -0.916s; }
+.apple-spinner .spinner-blade:nth-child(3)  { transform: rotate(60deg);  animation-delay: -0.833s; }
+.apple-spinner .spinner-blade:nth-child(4)  { transform: rotate(90deg);  animation-delay: -0.75s; }
+.apple-spinner .spinner-blade:nth-child(5)  { transform: rotate(120deg); animation-delay: -0.666s; }
+.apple-spinner .spinner-blade:nth-child(6)  { transform: rotate(150deg); animation-delay: -0.583s; }
+.apple-spinner .spinner-blade:nth-child(7)  { transform: rotate(180deg); animation-delay: -0.5s; }
+.apple-spinner .spinner-blade:nth-child(8)  { transform: rotate(210deg); animation-delay: -0.416s; }
+.apple-spinner .spinner-blade:nth-child(9)  { transform: rotate(240deg); animation-delay: -0.333s; }
+.apple-spinner .spinner-blade:nth-child(10) { transform: rotate(270deg); animation-delay: -0.25s; }
+.apple-spinner .spinner-blade:nth-child(11) { transform: rotate(300deg); animation-delay: -0.166s; }
+.apple-spinner .spinner-blade:nth-child(12) { transform: rotate(330deg); animation-delay: -0.083s; }
+
+@keyframes appleSpinnerFade {
+  0%   { opacity: 1; }
+  100% { opacity: 0.15; }
+}
+
+.loader-status-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.2px;
+  animation: pulseStatusText 2s ease-in-out infinite;
+}
+
+@keyframes pulseStatusText {
+  0%, 100% { opacity: 0.9; }
+  50% { opacity: 0.55; }
+}
+
+.loader-sub-text {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: -8px;
+}
+
 /* Choice row in Add Modal (App vs Folder) */
 .add-choice-row {
   display: grid;

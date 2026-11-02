@@ -193,6 +193,15 @@ async function init() {
     searchInput.focus();
   });
 
+  // Preload installed applications in background so Settings opens instantly
+  setTimeout(() => {
+    window.api.scanInstalledApps().then(scanned => {
+      if (Array.isArray(scanned) && scanned.length > 0) {
+        allInstalledApps = scanned;
+      }
+    }).catch(() => {});
+  }, 1200);
+
   setupEventListeners();
 }
 
@@ -340,31 +349,95 @@ function updateAddTabDropdown() {
 // ----------------------------------------------------
 // Installed PC Apps Explorer & 1-Click Adder
 // ----------------------------------------------------
+let activeScanSessionId = 0;
+let iconLoadQueue = [];
+let activeIconJobs = 0;
+const MAX_ICON_CONCURRENCY = 4;
+
+function clearIconQueue() {
+  iconLoadQueue = [];
+}
+
+function enqueueIconExtraction(appPath, onIconReady) {
+  if (installedIconCache.has(appPath)) {
+    const cached = installedIconCache.get(appPath);
+    if (cached) onIconReady(cached);
+    return;
+  }
+  iconLoadQueue.push({ appPath, onIconReady });
+  processNextIconJob();
+}
+
+function processNextIconJob() {
+  if (activeIconJobs >= MAX_ICON_CONCURRENCY || iconLoadQueue.length === 0) return;
+  activeIconJobs++;
+  const job = iconLoadQueue.shift();
+
+  window.api.extractIcon(job.appPath).then(icon => {
+    installedIconCache.set(job.appPath, icon || null);
+    if (icon) {
+      try { job.onIconReady(icon); } catch (e) {}
+    }
+  }).catch(() => {
+    installedIconCache.set(job.appPath, null);
+  }).finally(() => {
+    activeIconJobs--;
+    processNextIconJob();
+  });
+}
+
 async function loadInstalledApps() {
   if (allInstalledApps.length > 0) {
     renderInstalledAppsList();
     return;
   }
 
+  const thisSession = ++activeScanSessionId;
   installedAppsLoading = true;
+
   if (installedAppsList) {
-    installedAppsList.innerHTML = '<div class="installed-empty-hint">Scanning installed applications...</div>';
+    installedAppsList.innerHTML = `
+      <div class="installed-apps-loader">
+        <div class="apple-spinner">
+          <div class="spinner-blade"></div>
+          <div class="spinner-blade"></div>
+          <div class="spinner-blade"></div>
+          <div class="spinner-blade"></div>
+          <div class="spinner-blade"></div>
+          <div class="spinner-blade"></div>
+          <div class="spinner-blade"></div>
+          <div class="spinner-blade"></div>
+          <div class="spinner-blade"></div>
+          <div class="spinner-blade"></div>
+          <div class="spinner-blade"></div>
+          <div class="spinner-blade"></div>
+        </div>
+        <div class="loader-status-text">Scanning installed applications...</div>
+        <div class="loader-sub-text">Indexing Start Menu & system software in background</div>
+      </div>
+    `;
   }
 
   try {
     const scanned = await window.api.scanInstalledApps();
+    if (thisSession !== activeScanSessionId) return;
     allInstalledApps = Array.isArray(scanned) ? scanned : [];
   } catch (err) {
     console.warn('Error scanning installed apps:', err);
+    if (thisSession !== activeScanSessionId) return;
     allInstalledApps = [];
   } finally {
-    installedAppsLoading = false;
-    renderInstalledAppsList();
+    if (thisSession === activeScanSessionId) {
+      installedAppsLoading = false;
+      renderInstalledAppsList();
+    }
   }
 }
 
 function renderInstalledAppsList() {
   if (!installedAppsList) return;
+  clearIconQueue();
+
   const query = (installedAppsSearchInput ? installedAppsSearchInput.value : '').trim().toLowerCase();
 
   const filtered = allInstalledApps.filter(app => {
@@ -412,9 +485,8 @@ function renderInstalledAppsList() {
       const fallback = createInstalledAppFallback(app.name);
       iconWrap.appendChild(fallback);
 
-      // Async extract icon on demand
-      window.api.extractIcon(app.path).then(icon => {
-        installedIconCache.set(app.path, icon || null);
+      // Async extract icon via managed concurrency queue
+      enqueueIconExtraction(app.path, (icon) => {
         if (icon && iconWrap.contains(fallback)) {
           fallback.remove();
           const img = document.createElement('img');
@@ -858,6 +930,8 @@ function openSettingsModal(targetTabName = 'tabAdd') {
 }
 
 function closeSettingsModal() {
+  activeScanSessionId++;
+  clearIconQueue();
   settingsModal.classList.add('hidden');
 }
 

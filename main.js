@@ -178,9 +178,15 @@ async function extractFolderIconRobust(folderPath) {
   return null;
 }
 
+// In-memory icon extraction cache to avoid repeated disk reads or shell queries
+const iconExtractionCache = new Map();
+
 // Robust Icon Extraction with Windows Shortcut (.lnk) resolution & VisualElementsManifest
 async function extractIconRobust(filePath) {
   if (!filePath) return null;
+  if (iconExtractionCache.has(filePath)) {
+    return iconExtractionCache.get(filePath);
+  }
 
   let targetPath = filePath;
   let iconLocation = null;
@@ -190,29 +196,29 @@ async function extractIconRobust(filePath) {
     if (fs.existsSync(filePath)) {
       const stat = fs.statSync(filePath);
       if (stat.isDirectory()) {
-        return await extractFolderIconRobust(filePath);
+        const folderIcon = await extractFolderIconRobust(filePath);
+        if (folderIcon) iconExtractionCache.set(filePath, folderIcon);
+        return folderIcon;
       }
     }
   } catch (e) {}
 
-  // 1. If it's a .lnk shortcut, resolve the actual executable target and icon location via VBS
+  // 1. If it's a .lnk shortcut, resolve the actual executable target and icon location via native shell.readShortcutLink
   if (filePath.toLowerCase().endsWith('.lnk')) {
     try {
-      const safeEscaped = filePath.replace(/\\/g, '\\\\').replace(/"/g, '""');
-      const vbsScript = `Set ws = CreateObject("WScript.Shell")\nSet sc = ws.CreateShortcut("${safeEscaped}")\nWScript.Echo sc.TargetPath\nWScript.Echo sc.IconLocation\n`;
-      const tempVbs = path.join(app.getPath('temp'), `lnk_res_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.vbs`);
-      fs.writeFileSync(tempVbs, vbsScript, 'utf8');
-      const output = execSync(`cscript //Nologo "${tempVbs}"`, { timeout: 2500 }).toString().trim().split(/\r?\n/);
-      try { fs.unlinkSync(tempVbs); } catch (e) {}
-
-      if (output[0] && fs.existsSync(output[0].trim())) {
-        targetPath = output[0].trim();
-      }
-      if (output[1]) {
-        iconLocation = output[1].split(',')[0].trim();
+      if (typeof shell.readShortcutLink === 'function') {
+        const details = shell.readShortcutLink(filePath);
+        if (details) {
+          if (details.target && fs.existsSync(details.target)) {
+            targetPath = details.target;
+          }
+          if (details.icon) {
+            iconLocation = details.icon;
+          }
+        }
       }
     } catch (e) {
-      console.warn('VBS LNK resolve error:', e.message);
+      console.warn('readShortcutLink warning:', e.message);
     }
   }
 
@@ -220,7 +226,9 @@ async function extractIconRobust(filePath) {
   if (iconLocation && fs.existsSync(iconLocation) && (iconLocation.toLowerCase().endsWith('.ico') || iconLocation.toLowerCase().endsWith('.png'))) {
     try {
       const ext = path.extname(iconLocation).slice(1);
-      return `data:image/${ext === 'ico' ? 'x-icon' : ext};base64,` + fs.readFileSync(iconLocation).toString('base64');
+      const dataUri = `data:image/${ext === 'ico' ? 'x-icon' : ext};base64,` + fs.readFileSync(iconLocation).toString('base64');
+      iconExtractionCache.set(filePath, dataUri);
+      return dataUri;
     } catch (e) {}
   }
 
@@ -242,7 +250,9 @@ async function extractIconRobust(filePath) {
           const logoPath = path.join(dir, match[1]);
           if (fs.existsSync(logoPath)) {
             const ext = path.extname(logoPath).slice(1) || 'png';
-            return `data:image/${ext};base64,` + fs.readFileSync(logoPath).toString('base64');
+            const dataUri = `data:image/${ext};base64,` + fs.readFileSync(logoPath).toString('base64');
+            iconExtractionCache.set(filePath, dataUri);
+            return dataUri;
           }
         }
       }
@@ -251,7 +261,9 @@ async function extractIconRobust(filePath) {
     // Direct check for common resources/app/.../code_150x150.png
     const appLogo = path.join(dir, 'resources', 'app', 'resources', 'win32', 'code_150x150.png');
     if (fs.existsSync(appLogo)) {
-      return 'data:image/png;base64,' + fs.readFileSync(appLogo).toString('base64');
+      const dataUri = 'data:image/png;base64,' + fs.readFileSync(appLogo).toString('base64');
+      iconExtractionCache.set(filePath, dataUri);
+      return dataUri;
     }
   } catch (e) {}
 
@@ -262,6 +274,7 @@ async function extractIconRobust(filePath) {
       if (nativeIcon && !nativeIcon.isEmpty()) {
         const dataUrl = nativeIcon.toDataURL();
         if (dataUrl && dataUrl.length > 50) {
+          iconExtractionCache.set(filePath, dataUrl);
           return dataUrl;
         }
       }
@@ -273,7 +286,9 @@ async function extractIconRobust(filePath) {
     if (fs.existsSync(filePath) && filePath !== targetPath) {
       const nativeIcon = await app.getFileIcon(filePath, { size: 'large' });
       if (nativeIcon && !nativeIcon.isEmpty()) {
-        return nativeIcon.toDataURL();
+        const dataUrl = nativeIcon.toDataURL();
+        iconExtractionCache.set(filePath, dataUrl);
+        return dataUrl;
       }
     }
   } catch (e) {}
@@ -537,6 +552,34 @@ async function scanStartMenuShortcuts() {
   }));
 }
 
+// Background App Indexing & Cache
+let cachedInstalledApps = null;
+let scanInProgressPromise = null;
+
+async function getOrScanInstalledApps() {
+  if (cachedInstalledApps && cachedInstalledApps.length > 0) {
+    return cachedInstalledApps;
+  }
+  if (scanInProgressPromise) {
+    return scanInProgressPromise;
+  }
+
+  scanInProgressPromise = (async () => {
+    try {
+      const scanned = await scanStartMenuShortcuts();
+      cachedInstalledApps = scanned;
+      return scanned;
+    } catch (err) {
+      console.warn('Error during app scan:', err);
+      return [];
+    } finally {
+      scanInProgressPromise = null;
+    }
+  })();
+
+  return scanInProgressPromise;
+}
+
 // Window Management
 function createWindow() {
   const primaryDisplay = screen.getPrimaryDisplay();
@@ -792,7 +835,7 @@ ipcMain.handle('inspect-path', async (event, filePath) => {
 });
 
 ipcMain.handle('scan-installed-apps', async () => {
-  return await scanStartMenuShortcuts();
+  return await getOrScanInstalledApps();
 });
 
 ipcMain.handle('launch-app', async (event, { target, runAsAdmin }) => {
@@ -920,6 +963,11 @@ app.whenReady().then(async () => {
   startWinSpaceHook();
 
   createWindow();
+
+  // Pre-index installed applications in background 1.5s after launch
+  setTimeout(() => {
+    getOrScanInstalledApps().catch(err => console.warn('Background scan warning:', err));
+  }, 1500);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
